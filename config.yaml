@@ -1,0 +1,10 @@
+handlers:
+  - name: kakeibo
+    trigger:
+      type: channel
+      value: "kakeibo"   # 対象チャンネル名に合わせて変更
+    url: https://kakeibo-slack-handler-gq5mlbevtq-an.a.run.app
+  - name: fallback
+    trigger:
+      type: default
+    url: https://other-handler-xxxx.run.app  # TODO: terraform apply 後に更新
