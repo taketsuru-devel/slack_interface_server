@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+dist/
+*.egg-info/
+
+# uv
+.python-version
+
+# Environment
+.env
+.env.local
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+.terraform.lock.hcl
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/*.tfvars
+
+# Docker
+.dockerignore
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
