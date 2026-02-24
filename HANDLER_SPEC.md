@@ -63,7 +63,32 @@ Content-Type: application/json
 
 ---
 
-## 実装例（Python / Flask）
+## 実装例（SDK 利用 — 推奨）
+
+`slack-handler-sdk` を使うと、エンドポイント定義やリクエストパースを省略できる。
+
+```bash
+pip install "slack-handler-sdk @ git+https://github.com/taketsuru-devel/slack_interface_server.git@main#subdirectory=sdk"
+```
+
+```python
+from slack_handler_sdk import HandlerRequest, create_handler_app, run_app
+
+def handle(req: HandlerRequest) -> str:
+    # req.question, req.thread_history, req.user_id, req.channel_id が利用可能
+    return "ビジネスロジックの結果"
+
+app = create_handler_app(handle)
+
+if __name__ == "__main__":
+    run_app(app)
+```
+
+SDK が `/query`（POST）と `/health`（GET）を自動登録する。ハンドラーは `handler_fn` の実装だけに集中すればよい。
+
+## 実装例（素の Flask）
+
+SDK を使わない場合は以下のように直接実装する。
 
 ```python
 from flask import Flask, request, jsonify
@@ -129,25 +154,14 @@ handlers:
 
 ### IAM 設定（プライベート Cloud Run の場合）
 
-ハンドラーをプライベート Cloud Run としてデプロイする場合、ハンドラー側の terraform で `roles/run.invoker` を付与すること。
+ハンドラーをプライベート Cloud Run としてデプロイする場合、`infra` リポジトリの Terraform で `roles/run.invoker` を付与すること。
 
 ```hcl
-# ハンドラー側リポジトリの terraform に追加
-data "google_cloud_run_v2_service" "slack_interface_server" {
-  # SA メールは slack-interface-server リポジトリで確認
-  # cd terraform && terraform output service_account_email
-}
-
+# infra/gcp/ に追加
 resource "google_cloud_run_v2_service_iam_member" "slack_invoker" {
   name     = google_cloud_run_v2_service.handler.name
   location = var.region
   role     = "roles/run.invoker"
-  member   = "serviceAccount:<slack-interface-server の service_account_email>"
+  member   = "serviceAccount:${google_service_account.slack_server.email}"
 }
-```
-
-SA メールの確認方法:
-```bash
-# slack-interface-server リポジトリで
-cd terraform && terraform output service_account_email
 ```
