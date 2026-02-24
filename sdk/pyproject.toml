@@ -1,0 +1,20 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "slack-handler-sdk"
+version = "0.1.0"
+description = "SDK for building handler services called by slack-interface-server"
+requires-python = ">=3.11"
+dependencies = [
+    "flask>=3.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/slack_handler_sdk"]
