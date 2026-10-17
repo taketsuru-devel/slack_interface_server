@@ -7,6 +7,7 @@ from slack_bolt.adapter.flask import SlackRequestHandler
 
 from handler_client import call_handler
 from router import route
+from slack_files import extract_image_files
 
 SLACK_BOT_TOKEN = os.environ["SLACK_BOT_TOKEN"]
 SLACK_SIGNING_SECRET = os.environ["SLACK_SIGNING_SECRET"]
@@ -62,6 +63,9 @@ def handle_mention(event, say, client):
     channel_name = get_channel_name(client, channel)
     handler_url = route(channel_name=channel_name, question=question)
 
+    # 添付画像をダウンロード（ハンドラーは Slack トークンを持たないためここで取得する）
+    files = extract_image_files(event, token=SLACK_BOT_TOKEN)
+
     # ハンドラー呼び出し
     answer = call_handler(
         handler_url,
@@ -69,6 +73,7 @@ def handle_mention(event, say, client):
         thread_history=thread_history,
         user_id=event["user"],
         channel_id=channel,
+        files=files,
     )
 
     # 返答で更新
