@@ -57,7 +57,7 @@ POST /query
 
 ## GCP 環境
 
-- Project ID: `<PROJECT_ID>`
+- Project ID: `<PROJECT_ID>`（`../infra/gcp` で `terraform output -raw project_id`）
 - Region: `asia-northeast1`（東京）
 - Cloud Run: `slack-interface-server`（min=0, max=1, `startup_cpu_boost=true` 必須）
 - Artifact Registry: `asia-northeast1-docker.pkg.dev/<PROJECT_ID>/slack-interface-server/app:latest`
@@ -70,6 +70,18 @@ SLACK_BOT_TOKEN=xoxb-...
 SLACK_SIGNING_SECRET=...
 SLACK_APP_TOKEN=xapp-...   # Socket Mode用（ローカルのみ）
 HANDLER_CONFIG_PATH=./config.yaml
+```
+
+`config.yaml` は Cloud Run URL を含むため git 管理外。`config.example.yaml` をコピーして実 URL を入れる（`make build` 時にイメージへ同梱される）。
+
+## 運用メモ
+
+`latest` タグはデプロイ時点の SHA に固定される。ARの最新と一致しているか確認するには：
+
+```bash
+REVISION=$(gcloud run services describe slack-interface-server --region asia-northeast1 --project <PROJECT_ID> --format="value(status.latestReadyRevisionName)")
+gcloud run revisions describe $REVISION --region asia-northeast1 --project <PROJECT_ID> --format="value(spec.containers[0].image)"
+# sha256:... をAR側の digest と比較する
 ```
 
 ## 実装順序

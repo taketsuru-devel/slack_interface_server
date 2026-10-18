@@ -33,3 +33,6 @@ terraform/*.tfvars
 # IDE
 .vscode/
 .idea/
+
+# ハンドラー設定（Cloud Run URL を含むため config.example.yaml からコピーして作る）
+config.yaml

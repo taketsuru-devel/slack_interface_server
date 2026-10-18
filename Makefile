@@ -1,4 +1,4 @@
-PROJECT_ID := $(shell cd terraform && terraform output -raw project_id 2>/dev/null)
+PROJECT_ID := $(shell cd ../infra/gcp && terraform output -raw project_id 2>/dev/null)
 IMAGE_URI  := asia-northeast1-docker.pkg.dev/$(PROJECT_ID)/slack-interface-server/app:latest
 
 .PHONY: up build push
