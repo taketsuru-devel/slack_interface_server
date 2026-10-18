@@ -8,7 +8,7 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
 
-COPY app.py router.py handler_client.py config.yaml ./
+COPY app.py router.py handler_client.py slack_files.py config.yaml ./
 
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PORT=8080

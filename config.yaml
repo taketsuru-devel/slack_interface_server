@@ -3,12 +3,13 @@ handlers:
     trigger:
       type: channel
       value: "kakeibo"   # 対象チャンネル名に合わせて変更
-    url: https://kakeibo-slack-handler-xxxx.run.app
+    # url: https://kakeibo-slack-handler-xxxx.run.app
+    url: https://kakeibo-adk-agent-xxxx.run.app
   - name: receipt
     trigger:
       type: channel
       value: "receipt"
-    url: https://receipt-handler-xxxx.run.app  # TODO: infra の receipt-handler apply 後に receipt_handler_url で更新
+    url: https://receipt-handler-xxxx.run.app
   - name: fallback
     trigger:
       type: default
