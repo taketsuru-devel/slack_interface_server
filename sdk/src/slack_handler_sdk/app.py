@@ -32,6 +32,7 @@ def create_handler_app(handler_fn: Callable[[HandlerRequest], str]) -> Flask:
                 thread_history=body.get("thread_history", []),
                 user_id=body.get("user_id", ""),
                 channel_id=body.get("channel_id", ""),
+                files=body.get("files", []),
             )
         except (KeyError, TypeError) as e:
             return jsonify({"error": f"missing field: {e}"}), 400

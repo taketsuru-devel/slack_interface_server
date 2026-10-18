@@ -244,6 +244,7 @@ def slack_events():
    - `chat:write`
    - `channels:history`
    - `groups:history`
+   - `files:read`（添付画像をダウンロードしてハンドラーへ転送するため）
 4. ワークスペースにインストール
 5. Bot Token と Signing Secret を Secret Manager に登録
 

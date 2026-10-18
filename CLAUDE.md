@@ -51,7 +51,7 @@ handler_client.py # POST /query to handler (httpx, 30秒タイムアウト)
 
 ```
 POST /query
-{ "question": str, "thread_history": [...], "user_id": str, "channel_id": str }
+{ "question": str, "thread_history": [...], "user_id": str, "channel_id": str, "files": [{"name", "mimetype", "data_base64"}] }
 → { "answer": str }
 ```
 

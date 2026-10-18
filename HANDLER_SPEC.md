@@ -35,7 +35,10 @@ Content-Type: application/json
     {"role": "assistant", "content": "先月は4,500円でした"}
   ],
   "user_id": "U12345678",
-  "channel_id": "C12345678"
+  "channel_id": "C12345678",
+  "files": [
+    {"name": "receipt.jpg", "mimetype": "image/jpeg", "data_base64": "/9j/4AAQ..."}
+  ]
 }
 ```
 
@@ -45,6 +48,7 @@ Content-Type: application/json
 | `thread_history` | array | 今回の発言を除いた過去の会話履歴（古い順）。新規スレッドは `[]` |
 | `user_id` | string | 発言したユーザーの Slack UID |
 | `channel_id` | string | 発言があったチャンネルの Slack ID |
+| `files` | array | 今回の発言に添付された画像（`mimetype` が `image/` で始まるもの）。各要素は `name`, `mimetype`, `data_base64`（base64 文字列）。画像がなければ `[]`。省略可能で、SDK では `HandlerRequest.files` の既定値が `[]` |
 
 #### Response
 

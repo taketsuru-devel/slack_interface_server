@@ -2,8 +2,10 @@ import os
 
 import httpx
 
-TIMEOUT = 30.0
-METADATA_URL = "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/identity"
+TIMEOUT = 120.0
+METADATA_URL = (
+    "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/identity"
+)
 
 
 def _get_id_token(audience: str) -> str | None:
@@ -30,12 +32,14 @@ def call_handler(
     thread_history: list[dict],
     user_id: str,
     channel_id: str,
+    files: list[dict] | None = None,
 ) -> str:
     payload = {
         "question": question,
         "thread_history": thread_history,
         "user_id": user_id,
         "channel_id": channel_id,
+        "files": files or [],
     }
     headers = {}
     token = _get_id_token(audience=url)

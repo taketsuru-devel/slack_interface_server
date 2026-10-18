@@ -1,7 +1,4 @@
-import json
-
 import pytest
-
 from slack_handler_sdk import HandlerRequest, create_handler_app
 
 
@@ -80,3 +77,28 @@ class TestQuery:
         assert captured["req"].thread_history == history
         assert captured["req"].user_id == "U1"
         assert captured["req"].channel_id == "C1"
+
+
+class TestFiles:
+    def _capture(self, body: dict) -> HandlerRequest:
+        captured = {}
+
+        def capture_handler(req: HandlerRequest) -> str:
+            captured["req"] = req
+            return "ok"
+
+        app = create_handler_app(capture_handler)
+        app.config["TESTING"] = True
+        with app.test_client() as c:
+            resp = c.post("/query", json=body)
+        assert resp.status_code == 200
+        return captured["req"]
+
+    def test_query_passes_files(self):
+        files = [{"name": "r.jpg", "mimetype": "image/jpeg", "data_base64": "AAA="}]
+        req = self._capture({"question": "q", "files": files})
+        assert req.files == files
+
+    def test_query_files_default_empty(self):
+        req = self._capture({"question": "q"})
+        assert req.files == []
