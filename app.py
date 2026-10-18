@@ -86,6 +86,10 @@ handler = SlackRequestHandler(app)
 
 @flask_app.route("/slack/events", methods=["POST"])
 def slack_events():
+    # Cold start 時、Cloud Run は元リクエストをキューに保持しつつ Slack が 3 秒でリトライを送る。
+    # コンテナ起動後に両方が届くため、リトライ側を無視して二重処理を防ぐ。
+    if request.headers.get("X-Slack-Retry-Num"):
+        return {"ok": True}
     return handler.handle(request)
 
 
