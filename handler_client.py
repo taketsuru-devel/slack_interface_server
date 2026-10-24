@@ -2,7 +2,7 @@ import os
 
 import httpx
 
-TIMEOUT = 120.0
+TIMEOUT = 300.0
 METADATA_URL = (
     "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/identity"
 )
