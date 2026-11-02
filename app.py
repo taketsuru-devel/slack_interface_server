@@ -5,6 +5,7 @@ from flask import Flask, request
 from slack_bolt import App
 from slack_bolt.adapter.flask import SlackRequestHandler
 
+import task_queue
 from worker import process_mention
 
 SLACK_BOT_TOKEN = os.environ["SLACK_BOT_TOKEN"]
@@ -34,6 +35,14 @@ def handle_mention(event, say, client):
     # 即座に「考え中...」を投稿（Slack 3秒タイムアウト対策）
     placeholder = say(text="考え中...", thread_ts=thread_ts)
 
+    # 本番は Cloud Tasks 経由で /tasks/handle に回す。
+    # 未設定（ローカルの Socket Mode 等）はその場で処理する
+    if task_queue.enabled():
+        task_queue.enqueue(
+            {"event": event, "question": question, "placeholder_ts": placeholder["ts"]}
+        )
+        return
+
     process_mention(
         event,
         question=question,
@@ -55,6 +64,23 @@ def slack_events():
     if request.headers.get("X-Slack-Retry-Num"):
         return {"ok": True}
     return handler.handle(request)
+
+
+@flask_app.route(task_queue.TASK_PATH, methods=["POST"])
+def handle_task():
+    if not task_queue.verify_task_request(request.headers.get("Authorization")):
+        return {"ok": False}, 403
+    payload = request.get_json()
+    # process_mention は例外を握ってエラー文で更新するので常に 200 を返す（再試行させない）
+    process_mention(
+        payload["event"],
+        question=payload["question"],
+        placeholder_ts=payload["placeholder_ts"],
+        client=app.client,
+        bot_user_id=get_bot_user_id(),
+        token=SLACK_BOT_TOKEN,
+    )
+    return {"ok": True}
 
 
 @flask_app.route("/health", methods=["GET"])
