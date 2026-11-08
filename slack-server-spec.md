@@ -74,7 +74,7 @@ Content-Type: application/json
 ```
 
 - HTTP 200 を返すこと
-- タイムアウトは 30 秒を想定（shared-server 側のタイムアウト設定）
+- タイムアウトは 300 秒（shared-server 側のタイムアウト設定）
 
 ---
 

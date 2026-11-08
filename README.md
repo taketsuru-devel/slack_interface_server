@@ -7,7 +7,9 @@
 ```
 Slack (app_mention)
   ↓
-slack_interface_server   # Slack 認証・スレッド履歴取得・ルーティング・返信
+slack_interface_server   # Slack 認証・「考え中...」投稿・Cloud Tasks へ投入
+  ↓  Cloud Tasks → POST /tasks/handle
+slack_interface_server   # スレッド履歴取得・ルーティング・返信
   ↓  POST /query
 各ハンドラーサービス（別リポジトリ）
 ```

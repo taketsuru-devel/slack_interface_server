@@ -36,16 +36,20 @@ cd ../infra/gcp && terraform apply
 ```
 Slack (app_mention)
   ↓
-app.py            # Slack Bolt + Flask エントリポイント (/slack/events)
+app.py            # /slack/events: 「考え中...」を投稿し Cloud Tasks に積んで ack
+  ↓  Cloud Tasks (OIDC, 再試行なし)
+app.py            # /tasks/handle: OIDC を検証して worker を呼ぶ
   ↓
-router.py         # config.yaml 読み込み・ルーティング (channel → keyword → default)
-  ↓
-handler_client.py # POST /query to handler (httpx, 30秒タイムアウト)
+worker.py         # 履歴取得・ルーティング・画像取得・ハンドラー呼び出し・chat_update
+  ├ router.py         # config.yaml 読み込み・ルーティング (channel → keyword → default)
+  └ handler_client.py # POST /query to handler (httpx, 300秒タイムアウト)
   ↓
 各ハンドラー (別リポジトリ)
 ```
 
-**Slack 3秒タイムアウト対策**: `app_mention` 受信後、即座に「考え中...」を投稿し、ハンドラーレスポンス後に `chat_update` で上書きする。
+**Slack 3秒タイムアウト対策**: `app_mention` 受信後、即座に「考え中...」を投稿し、ハンドラーレスポンス後に `chat_update` で上書きする。失敗時はエラー文で上書きする。
+
+**Cloud Tasks を挟む理由**: Cloud Run は処理中のリクエストがないインスタンスを止めてよいため、ack 後のスレッドでハンドラーを待つと回答が消えることがある（2026-10-31・11-02 に発生）。`/tasks/handle` のリクエストの中で待つ。`TASKS_QUEUE` が未設定ならリスナー内でその場で処理する（ローカルの Socket Mode、本番のロールバック用）。`/tasks/handle` はサービスが `allUsers` 公開なので、アプリ側で OIDC トークンの audience と email を検証する。
 
 ## ハンドラー通信インターフェース
 
@@ -70,6 +74,10 @@ SLACK_BOT_TOKEN=xoxb-...
 SLACK_SIGNING_SECRET=...
 SLACK_APP_TOKEN=xapp-...   # Socket Mode用（ローカルのみ）
 HANDLER_CONFIG_PATH=./config.yaml
+# 本番のみ（infra で設定）。未設定ならハンドラーをその場で呼ぶ
+TASKS_QUEUE=projects/<PROJECT_ID>/locations/asia-northeast1/queues/slack-handler
+TASKS_SERVICE_URL=https://slack-interface-server-<PROJECT_NUMBER>.asia-northeast1.run.app
+TASKS_SERVICE_ACCOUNT=slack-interface-server@<PROJECT_ID>.iam.gserviceaccount.com
 ```
 
 `config.yaml` は Cloud Run URL を含むため git 管理外。`config.example.yaml` をコピーして実 URL を入れる（`make build` 時にイメージへ同梱される）。

@@ -5,9 +5,8 @@ from flask import Flask, request
 from slack_bolt import App
 from slack_bolt.adapter.flask import SlackRequestHandler
 
-from handler_client import call_handler
-from router import route
-from slack_files import extract_image_files
+import task_queue
+from worker import process_mention
 
 SLACK_BOT_TOKEN = os.environ["SLACK_BOT_TOKEN"]
 SLACK_SIGNING_SECRET = os.environ["SLACK_SIGNING_SECRET"]
@@ -28,56 +27,30 @@ def strip_mention(text: str) -> str:
     return re.sub(r"<@[A-Z0-9]+>", "", text).strip()
 
 
-def get_channel_name(client, channel_id: str) -> str:
-    try:
-        result = client.conversations_info(channel=channel_id)
-        return result["channel"]["name"]
-    except Exception as e:
-        print(f"[WARN] conversations_info failed for {channel_id}: {e}")
-        return ""
-
-
-def build_history(replies: dict, bot_user_id: str) -> list[dict]:
-    """今回の発言を除いた過去の会話履歴を構築する（古い順）"""
-    history = []
-    for msg in replies["messages"][:-1]:
-        role = "assistant" if msg.get("user") == bot_user_id else "user"
-        history.append({"role": role, "content": msg["text"]})
-    return history
-
-
 @app.event("app_mention")
 def handle_mention(event, say, client):
-    channel = event["channel"]
     thread_ts = event.get("thread_ts", event["ts"])
     question = strip_mention(event["text"])
 
     # 即座に「考え中...」を投稿（Slack 3秒タイムアウト対策）
     placeholder = say(text="考え中...", thread_ts=thread_ts)
 
-    # スレッド履歴取得
-    replies = client.conversations_replies(channel=channel, ts=thread_ts)
-    thread_history = build_history(replies, bot_user_id=get_bot_user_id())
+    # 本番は Cloud Tasks 経由で /tasks/handle に回す。
+    # 未設定（ローカルの Socket Mode 等）はその場で処理する
+    if task_queue.enabled():
+        task_queue.enqueue(
+            {"event": event, "question": question, "placeholder_ts": placeholder["ts"]}
+        )
+        return
 
-    # ルーティング
-    channel_name = get_channel_name(client, channel)
-    handler_url = route(channel_name=channel_name, question=question)
-
-    # 添付画像をダウンロード（ハンドラーは Slack トークンを持たないためここで取得する）
-    files = extract_image_files(event, token=SLACK_BOT_TOKEN)
-
-    # ハンドラー呼び出し
-    answer = call_handler(
-        handler_url,
+    process_mention(
+        event,
         question=question,
-        thread_history=thread_history,
-        user_id=event["user"],
-        channel_id=channel,
-        files=files,
+        placeholder_ts=placeholder["ts"],
+        client=client,
+        bot_user_id=get_bot_user_id(),
+        token=SLACK_BOT_TOKEN,
     )
-
-    # 返答で更新
-    client.chat_update(channel=channel, ts=placeholder["ts"], text=answer)
 
 
 flask_app = Flask(__name__)
@@ -91,6 +64,23 @@ def slack_events():
     if request.headers.get("X-Slack-Retry-Num"):
         return {"ok": True}
     return handler.handle(request)
+
+
+@flask_app.route(task_queue.TASK_PATH, methods=["POST"])
+def handle_task():
+    if not task_queue.verify_task_request(request.headers.get("Authorization")):
+        return {"ok": False}, 403
+    payload = request.get_json()
+    # process_mention は例外を握ってエラー文で更新するので常に 200 を返す（再試行させない）
+    process_mention(
+        payload["event"],
+        question=payload["question"],
+        placeholder_ts=payload["placeholder_ts"],
+        client=app.client,
+        bot_user_id=get_bot_user_id(),
+        token=SLACK_BOT_TOKEN,
+    )
+    return {"ok": True}
 
 
 @flask_app.route("/health", methods=["GET"])

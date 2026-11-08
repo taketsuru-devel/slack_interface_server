@@ -63,7 +63,7 @@ Content-Type: application/json
 | `answer` | string | Slack スレッドに返信するテキスト |
 
 - HTTP 200 を返すこと
-- タイムアウトは **30秒以内**に応答すること（slack-interface-server 側の設定値）
+- タイムアウトは **300秒以内**に応答すること（slack-interface-server 側の設定値）
 
 ---
 
