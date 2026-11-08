@@ -89,7 +89,7 @@ Cloud Tasks ─(OIDC)→ POST /tasks/handle   ← 処理中はリクエストが
 完了基準：
 
 - [x] pytest・ruff が全件通る
-- [x] Slack の kakeibo チャンネルで、コールドスタート状態から 40 秒以上かかる質問をして回答に更新される
+- [ ] Slack の kakeibo チャンネルで、コールドスタート状態から 40 秒以上かかる質問をして回答に更新される
 - [x] そのときのログで、`/slack/events` が数秒で終わり、`/tasks/handle` のリクエストがハンドラーの応答まで開いていることを確認する
 - [x] Bearer なしで `/tasks/handle` を叩くと 403 になる
 - [x] receipt チャンネルの画像付き投稿も従来どおり処理される
